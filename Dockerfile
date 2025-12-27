@@ -10,8 +10,13 @@ ENV NEKO_BIND=:8080
 # 暴露端口
 EXPOSE 8080
 
-# 修改 supervisord 配置以添加 --no-sandbox 参数
-RUN sed -i 's/^command=chromium$/command=chromium --no-sandbox --disable-dev-shm-usage --disable-setuid-sandbox --disable-gpu/' /etc/neko/supervisord/chromium.conf
+# 创建自定义启动脚本
+RUN echo '#!/bin/bash\n\
+# 修改 chromium supervisord 配置\n\
+sed -i "s|command=chromium|command=chromium --no-sandbox --disable-dev-shm-usage --disable-setuid-sandbox --disable-gpu|g" /etc/neko/supervisord/chromium.conf\n\
+# 启动 supervisord\n\
+exec /usr/bin/supervisord -c /etc/neko/supervisord.conf\n\
+' > /entrypoint.sh && chmod +x /entrypoint.sh
 
-# 启动 Neko
-CMD ["/usr/bin/supervisord", "-c", "/etc/neko/supervisord.conf"]
+# 使用自定义启动脚本
+CMD ["/entrypoint.sh"]
